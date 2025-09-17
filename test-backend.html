@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Backend Connection Test</h1>
+    
+    <button onclick="testHealth()">Test Health Endpoint</button>
+    <button onclick="testGenerate()">Test Generate Endpoint</button>
+    <button onclick="checkCORS()">Check CORS</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        const resultsDiv = document.getElementById('results');
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(div);
+        }
+
+        async function testHealth() {
+            addResult('Testing health endpoint...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/papers/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Health check successful: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    addResult(`❌ Health check failed with status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Health check error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGenerate() {
+            addResult('Testing generate endpoint...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/papers/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: 'Test Paper',
+                        sections: ['abstract', 'introduction'],
+                        customSections: []
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Generate test successful`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    addResult(`❌ Generate test failed: ${errorData.message}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Generate test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkCORS() {
+            addResult('Checking CORS configuration...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/papers/health`, {
+                    method: 'OPTIONS'
+                });
+                addResult(`✅ CORS preflight successful`, 'success');
+            } catch (error) {
+                addResult(`❌ CORS error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run health check on load
+        window.onload = () => {
+            addResult('Page loaded, running automatic health check...', 'info');
+            setTimeout(testHealth, 1000);
+        };
+    </script>
+</body>
+</html>
