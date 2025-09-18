@@ -2,7 +2,7 @@ services:
   - type: web
     name: paperflow-backend
     env: python
-    buildCommand: pip install --upgrade pip && pip install --no-cache-dir --force-reinstall -r requirements-minimal.txt && python verify_minimal_build.py
+    buildCommand: pip install --upgrade pip && pip install --no-cache-dir --force-reinstall -r requirements-ultra-minimal.txt && python verify_minimal_build.py
     startCommand: python start_render.py
     envVars:
       - key: PORT

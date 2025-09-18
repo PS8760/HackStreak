@@ -1,5 +1,6 @@
-# Ultra-minimal requirements - absolute bare minimum
-fastapi==0.100.1
-uvicorn==0.23.2
+# Ultra-minimal requirements - Python 3.11 compatible
+fastapi==0.95.2
+uvicorn==0.22.0
 httpx==0.24.1
 python-dotenv==1.0.0
+pydantic==1.10.7
