@@ -13,7 +13,8 @@ def test_imports():
         print("Testing imports...")
         
         import typing_extensions
-        print(f"✅ typing-extensions {typing_extensions.__version__}")
+        version = getattr(typing_extensions, '__version__', 'unknown')
+        print(f"✅ typing-extensions {version}")
         
         import pydantic
         print(f"✅ Pydantic {pydantic.VERSION}")
