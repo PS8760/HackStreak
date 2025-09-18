@@ -5,7 +5,19 @@ Verify that minimal requirements can be installed and imported successfully
 
 def test_imports():
     """Test that all required packages can be imported"""
+    import sys
+    print(f"🐍 Python version: {sys.version}")
+    
     try:
+        # Test core dependencies one by one
+        print("Testing imports...")
+        
+        import typing_extensions
+        print(f"✅ typing-extensions {typing_extensions.__version__}")
+        
+        import pydantic
+        print(f"✅ Pydantic {pydantic.VERSION}")
+        
         import fastapi
         print(f"✅ FastAPI {fastapi.__version__}")
         
@@ -15,17 +27,20 @@ def test_imports():
         import httpx
         print(f"✅ HTTPX {httpx.__version__}")
         
-        import pydantic
-        print(f"✅ Pydantic {pydantic.VERSION}")
-        
         import dotenv
         print("✅ Python-dotenv imported")
+        
+        # Test FastAPI app creation
+        app = fastapi.FastAPI(title="Test App")
+        print("✅ FastAPI app creation successful")
         
         print("\n🎉 All minimal requirements imported successfully!")
         return True
         
-    except ImportError as e:
-        print(f"❌ Import failed: {e}")
+    except Exception as e:
+        print(f"❌ Import/test failed: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 if __name__ == "__main__":

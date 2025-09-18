@@ -1,0 +1,5 @@
+# Ultra-minimal requirements - absolute bare minimum
+fastapi==0.100.1
+uvicorn==0.23.2
+httpx==0.24.1
+python-dotenv==1.0.0

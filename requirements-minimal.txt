@@ -1,10 +1,10 @@
-# Ultra-minimal requirements for Render (no Rust compilation needed)
-fastapi==0.95.2
-uvicorn==0.22.0
+# Ultra-minimal requirements for Render (Python 3.13 compatible)
+fastapi==0.100.1
+uvicorn==0.23.2
 httpx==0.24.1
 python-dotenv==1.0.0
-pydantic==1.10.7
+pydantic==1.10.12
 python-multipart==0.0.6
 PyPDF2==3.0.1
 reportlab==4.0.4
-typing-extensions==4.5.0
+typing-extensions==4.8.0
