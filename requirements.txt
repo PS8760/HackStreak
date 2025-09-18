@@ -1,0 +1,50 @@
+# Core FastAPI and ASGI server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Environment and configuration
+python-dotenv==1.0.0
+
+# HTTP client for API calls
+httpx==0.25.2
+requests==2.31.0
+
+# Data validation and serialization
+pydantic==2.5.0
+
+# File handling and uploads
+python-multipart==0.0.6
+aiofiles==23.2.1
+
+# PDF processing and generation
+PyPDF2==3.0.1
+reportlab==4.0.7
+
+# Authentication and security (if needed)
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Additional utilities
+typing-extensions==4.8.0
+
+# Development and testing (optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Logging and monitoring
+structlog==23.2.0
+
+# For better JSON handling
+orjson==3.9.10
+
+# For async operations
+asyncio-throttle==1.0.2
+
+# For rate limiting
+slowapi==0.1.9
+
+# For better error handling
+rich==13.7.0
+
+# For environment variable validation
+pydantic-settings==2.1.0

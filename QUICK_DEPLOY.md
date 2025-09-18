@@ -28,12 +28,6 @@ python deploy.py vercel
 ```
 **Result**: App deployed to Vercel URL
 
-### 🔥 Firebase Hosting
-```bash
-python deploy.py firebase
-```
-**Result**: App deployed to https://paperflow-d8cd6.web.app
-
 ### 🏗️ Manual Build
 ```bash
 python deploy.py build

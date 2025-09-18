@@ -19,13 +19,26 @@ Generate professional research papers in under 1 second using advanced AI models
 ### Prerequisites
 - Python 3.8+
 - Node.js 16+
+- All Python dependencies in `requirements.txt`
 
-### One-Command Setup
+### New User Setup
+```bash
+# First-time installation
+python install.py
+
+# Edit .env with your API keys
+nano .env
+
+# Start the application
+python start.py
+```
+
+### Quick Start (Existing Users)
 ```bash
 python start.py
 ```
 
-That's it! The system will:
+The system will:
 - ✅ Clean up ports automatically
 - ✅ Set up environment variables
 - ✅ Start ultra-fast AI backend (port 8000)

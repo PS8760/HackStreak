@@ -154,26 +154,9 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ---
 
-## 🔥 Firebase Hosting (Pre-configured)
+## 🔥 Firebase Hosting
 
-### Automated Firebase Deployment
-
-Your Firebase project is already configured! Just deploy:
-
-```bash
-python deploy.py firebase
-```
-
-This will:
-- ✅ Install Firebase CLI if needed
-- ✅ Build the project
-- ✅ Deploy to https://paperflow-d8cd6.web.app
-- ✅ Configure SPA routing
-- ✅ Set up caching headers
-
-### Manual Firebase Deployment
-
-If you prefer manual control:
+### Setup Firebase Hosting
 
 1. **Install Firebase CLI**
    ```bash
@@ -181,31 +164,29 @@ If you prefer manual control:
    firebase login
    ```
 
-2. **Build and Deploy**
+2. **Initialize Firebase**
    ```bash
-   npm run build
-   firebase deploy --only hosting
+   firebase init hosting
+   # Select your Firebase project
+   # Set public directory to: dist
+   # Configure as SPA: Yes
+   # Set up automatic builds: No
    ```
 
-### Backend for Firebase
-For Firebase hosting, deploy your backend separately:
-- **Railway**: `railway up` (recommended)
-- **Render**: Connect GitHub repo
-- **Vercel**: `vercel --prod` (serverless functions)
+3. **Build and Deploy**
+   ```bash
+   npm run build
+   firebase deploy
+   ```
 
-Then update your environment:
+### Backend Deployment
+Deploy backend separately on Railway, Render, or your VPS, then update:
 ```bash
+# Update environment variables
 echo "VITE_API_BASE_URL=https://your-backend-url.com/api" > .env
 npm run build
 firebase deploy
 ```
-
-### Firebase Features Enabled
-- ✅ **Hosting**: Static site hosting
-- ✅ **Authentication**: Email/password + Google OAuth
-- ✅ **Firestore**: User data and paper history
-- ✅ **Analytics**: Usage tracking
-- ✅ **Project**: paperflow-d8cd6
 
 ---
 
@@ -358,12 +339,6 @@ VITE_GEMINI_API_KEY=your_gemini_api_key_here
    - Sign in with Google account
    - Create API key
 
-3. **Firebase Configuration** (Already configured)
-   - Project: `paperflow-d8cd6`
-   - Authentication and Firestore enabled
-   - Analytics configured
-   - No additional setup required
-
 ---
 
 ## 🔍 Health Checks & Monitoring
@@ -401,15 +376,10 @@ vercel --prod
 railway up
 ```
 
-### Firebase (Pre-configured)
-```bash
-python deploy.py firebase
-```
-
-### Manual Firebase
+### Firebase
 ```bash
 npm run build
-firebase deploy --only hosting
+firebase deploy
 ```
 
 ---

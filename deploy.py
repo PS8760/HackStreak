@@ -132,37 +132,6 @@ def vercel_deploy():
     print("✅ Vercel deployment complete!")
     return True
 
-def firebase_deploy():
-    """Deploy to Firebase Hosting"""
-    print("🔥 Deploying to Firebase Hosting...")
-    
-    # Check if firebase CLI is installed
-    if not run_command("firebase --version"):
-        print("Installing Firebase CLI...")
-        if not run_command("npm install -g firebase-tools"):
-            return False
-    
-    # Login to Firebase (if not already logged in)
-    print("Checking Firebase authentication...")
-    if not run_command("firebase projects:list"):
-        print("Please login to Firebase...")
-        if not run_command("firebase login"):
-            return False
-    
-    # Build the project
-    print("Building project...")
-    if not run_command("npm run build"):
-        return False
-    
-    # Deploy to Firebase
-    print("Deploying to Firebase Hosting...")
-    if not run_command("firebase deploy --only hosting"):
-        return False
-    
-    print("✅ Firebase deployment complete!")
-    print("🌐 Your app is live at: https://paperflow-d8cd6.web.app")
-    return True
-
 def build_production():
     """Build for production"""
     print("🏗️ Building for production...")
@@ -179,8 +148,10 @@ def build_production():
     
     # Install Python dependencies
     print("Installing Python dependencies...")
-    if not run_command("pip install -r backend_python/requirements.txt"):
-        return False
+    if not run_command("pip install -r backend_python/requirements-prod.txt"):
+        print("Production requirements failed, trying minimal requirements...")
+        if not run_command("pip install -r backend_python/requirements-minimal.txt"):
+            return False
     
     print("✅ Production build complete!")
     print("📁 Frontend build: ./dist/")
@@ -198,7 +169,6 @@ def main():
         print("\nOptions:")
         print("  docker     - Deploy with Docker Compose (recommended)")
         print("  vercel     - Deploy frontend to Vercel")
-        print("  firebase   - Deploy to Firebase Hosting")
         print("  build      - Build for production")
         print("  check      - Check requirements only")
         return
@@ -219,13 +189,11 @@ def main():
         docker_deploy()
     elif option == 'vercel':
         vercel_deploy()
-    elif option == 'firebase':
-        firebase_deploy()
     elif option == 'build':
         build_production()
     else:
         print(f"❌ Unknown option: {option}")
-        print("Available options: docker, vercel, firebase, build, check")
+        print("Available options: docker, vercel, build, check")
 
 if __name__ == "__main__":
     main()
