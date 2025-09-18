@@ -7,7 +7,18 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "npm run start:fullstack",
+    "start:fullstack": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend_python && python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
+    "start:frontend": "npm run dev",
+    "install:all": "pip install -r backend_python/requirements.txt && npm install",
+    "clean": "pkill -f uvicorn || true && pkill -f vite || true",
+    "test": "python test_integration.py",
+    "docker:up": "docker-compose up --build",
+    "docker:down": "docker-compose down",
+    "fix": "python emergency_fix.py",
+    "dev-fast": "vite --host 0.0.0.0 --port 5173 --no-hmr"
   },
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",

@@ -24,6 +24,8 @@ const PaperFlowForm = () => {
   const [newSectionName, setNewSectionName] = useState('');
   const [newSectionDescription, setNewSectionDescription] = useState('');
   const [showCustomSectionForm, setShowCustomSectionForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedPaper, setEditedPaper] = useState(null);
 
   const handleCheckboxChange = (section) => {
     setSelectedSections(prev => ({
@@ -99,7 +101,9 @@ const PaperFlowForm = () => {
       );
 
       if (response.success) {
-        setGeneratedPaper(response.data.paperContent);
+        // Backend returns paper_content (snake_case), frontend expects paperContent (camelCase)
+        const paperContent = response.data.paper_content || response.data.paperContent;
+        setGeneratedPaper(paperContent);
         setShowPreview(true);
 
         // Save to user history if logged in
@@ -109,7 +113,7 @@ const PaperFlowForm = () => {
               title: paperTitle,
               sections: selectedStandardSections,
               customSections: selectedCustomSections,
-              generatedContent: response.data.paperContent
+              generatedContent: paperContent
             });
           } catch (error) {
             console.error('Error saving paper to history:', error);
@@ -159,6 +163,69 @@ const PaperFlowForm = () => {
     setCustomSections([]);
     setGeneratedPaper(null);
     setShowPreview(false);
+    setIsEditing(false);
+    setEditedPaper(null);
+    setGenerating(false); // Reset generating state
+  };
+
+  const handleEditPaper = () => {
+    setIsEditing(true);
+    setEditedPaper({ ...generatedPaper });
+  };
+
+  const handleSaveEdit = () => {
+    setGeneratedPaper({ ...editedPaper });
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedPaper(null);
+  };
+
+  const handleEditChange = (section, value) => {
+    setEditedPaper(prev => ({
+      ...prev,
+      [section]: value
+    }));
+  };
+
+  const handleCustomSectionEdit = (sectionName, value) => {
+    setEditedPaper(prev => ({
+      ...prev,
+      custom_sections: {
+        ...prev.custom_sections,
+        [sectionName]: value
+      }
+    }));
+  };
+
+  // Helper component for editable sections
+  const EditableSection = ({ title, sectionKey, content, isCustom = false, customSectionName = null }) => {
+    const currentContent = isEditing
+      ? (isCustom
+        ? editedPaper?.custom_sections?.[customSectionName] || content
+        : editedPaper?.[sectionKey] || content)
+      : content;
+
+    return (
+      <div className="mb-6">
+        <h2 className="text-lg font-bold text-gray-800 mb-3">{title}</h2>
+        {isEditing ? (
+          <textarea
+            value={currentContent}
+            onChange={(e) => isCustom
+              ? handleCustomSectionEdit(customSectionName, e.target.value)
+              : handleEditChange(sectionKey, e.target.value)
+            }
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 text-justify resize-vertical min-h-[120px]"
+            placeholder={`Edit ${title.toLowerCase()}...`}
+          />
+        ) : (
+          <p className="text-gray-700 text-justify">{currentContent}</p>
+        )}
+      </div>
+    );
   };
 
   const sections = [
@@ -269,13 +336,13 @@ const PaperFlowForm = () => {
                     Generating Paper with AI...
                   </div>
                 ) : (
-                  '🤖 Generate Fake Scientific Paper'
+                  '🤖 Generate FABRICATED Research Paper'
                 )}
               </button>
               <p className="text-center text-sm text-gray-500 mt-4 max-w-md">
                 {generating
-                  ? 'Using Gemini AI to create a realistic but fabricated research paper...'
-                  : 'This will create a plausible but fabricated scientific paper for educational analysis and fraud detection training'
+                  ? 'Using AI to create FAKE research paper with fabricated data for educational purposes...'
+                  : 'This will create a FABRICATED scientific paper with fake data for educational fraud detection training'
                 }
               </p>
             </div>
@@ -288,18 +355,43 @@ const PaperFlowForm = () => {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-800">Generated Research Paper</h2>
               <div className="flex space-x-4">
-                <button
-                  onClick={handleDownloadPDF}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
-                >
-                  📄 Download PDF
-                </button>
-                <button
-                  onClick={resetForm}
-                  className="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors duration-300"
-                >
-                  🔄 Generate New Paper
-                </button>
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={handleSaveEdit}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                    >
+                      💾 Save Changes
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors duration-300"
+                    >
+                      ❌ Cancel Edit
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleEditPaper}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                    >
+                      ✏️ Edit Paper
+                    </button>
+                    <button
+                      onClick={handleDownloadPDF}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                    >
+                      📄 Download PDF
+                    </button>
+                    <button
+                      onClick={resetForm}
+                      className="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors duration-300"
+                    >
+                      🔄 Generate New Paper
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -317,76 +409,110 @@ const PaperFlowForm = () => {
                 </div>
 
                 {generatedPaper.abstract && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3">Abstract</h2>
-                    <p className="text-gray-700 text-justify">{generatedPaper.abstract}</p>
-                  </div>
+                  <EditableSection
+                    title="Abstract"
+                    sectionKey="abstract"
+                    content={generatedPaper.abstract}
+                  />
                 )}
 
                 {generatedPaper.introduction && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3">1. Introduction</h2>
-                    <p className="text-gray-700 text-justify">{generatedPaper.introduction}</p>
-                  </div>
+                  <EditableSection
+                    title="1. Introduction"
+                    sectionKey="introduction"
+                    content={generatedPaper.introduction}
+                  />
                 )}
 
                 {generatedPaper.literatureReview && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3">2. Literature Review</h2>
-                    <p className="text-gray-700 text-justify">{generatedPaper.literatureReview}</p>
-                  </div>
+                  <EditableSection
+                    title="2. Literature Review"
+                    sectionKey="literatureReview"
+                    content={generatedPaper.literatureReview}
+                  />
                 )}
 
                 {generatedPaper.methodology && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3">3. Methodology</h2>
-                    <p className="text-gray-700 text-justify">{generatedPaper.methodology}</p>
-                  </div>
+                  <EditableSection
+                    title="3. Methodology"
+                    sectionKey="methodology"
+                    content={generatedPaper.methodology}
+                  />
                 )}
 
                 {generatedPaper.results && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3">4. Results</h2>
-                    <p className="text-gray-700 text-justify">{generatedPaper.results}</p>
-                  </div>
+                  <EditableSection
+                    title="4. Results"
+                    sectionKey="results"
+                    content={generatedPaper.results}
+                  />
                 )}
 
                 {generatedPaper.discussion && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3">5. Discussion</h2>
-                    <p className="text-gray-700 text-justify">{generatedPaper.discussion}</p>
-                  </div>
+                  <EditableSection
+                    title="5. Discussion"
+                    sectionKey="discussion"
+                    content={generatedPaper.discussion}
+                  />
+                )}
+
+                {generatedPaper.dataset && (
+                  <EditableSection
+                    title="Dataset"
+                    sectionKey="dataset"
+                    content={generatedPaper.dataset}
+                  />
+                )}
+
+                {generatedPaper.appendices && (
+                  <EditableSection
+                    title="Appendices"
+                    sectionKey="appendices"
+                    content={generatedPaper.appendices}
+                  />
                 )}
 
                 {/* Custom Sections */}
                 {generatedPaper.customSections && Object.entries(generatedPaper.customSections).map(([sectionName, content], index) => (
-                  <div key={sectionName} className="mb-6">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3">{6 + index}. {sectionName}</h2>
-                    <p className="text-gray-700 text-justify">{content}</p>
-                  </div>
+                  <EditableSection
+                    key={sectionName}
+                    title={`${6 + index}. ${sectionName}`}
+                    sectionKey="customSections"
+                    content={content}
+                    isCustom={true}
+                    customSectionName={sectionName}
+                  />
                 ))}
 
                 {generatedPaper.conclusion && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3">
-                      {Object.keys(generatedPaper.customSections || {}).length + 6}. Conclusion
-                    </h2>
-                    <p className="text-gray-700 text-justify">{generatedPaper.conclusion}</p>
-                  </div>
+                  <EditableSection
+                    title={`${Object.keys(generatedPaper.customSections || {}).length + 6}. Conclusion`}
+                    sectionKey="conclusion"
+                    content={generatedPaper.conclusion}
+                  />
                 )}
 
                 {generatedPaper.references && (
                   <div className="mb-6">
                     <h2 className="text-lg font-bold text-gray-800 mb-3">References</h2>
-                    <div className="text-gray-700 text-sm">
-                      {generatedPaper.references.split('\n').map((ref, index) => (
-                        ref.trim() && (
-                          <p key={index} className="mb-2 text-justify">
-                            {index + 1}. {ref.trim()}
-                          </p>
-                        )
-                      ))}
-                    </div>
+                    {isEditing ? (
+                      <textarea
+                        value={editedPaper?.references || generatedPaper.references}
+                        onChange={(e) => handleEditChange('references', e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 text-sm resize-vertical min-h-[120px]"
+                        placeholder="Edit references..."
+                      />
+                    ) : (
+                      <div className="text-gray-700 text-sm">
+                        {generatedPaper.references.split('\n').map((ref, index) => (
+                          ref.trim() && (
+                            <p key={index} className="mb-2 text-justify">
+                              {ref.trim()}
+                            </p>
+                          )
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

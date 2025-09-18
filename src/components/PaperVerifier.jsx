@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import * as pdfjsLib from 'pdfjs-dist';
+import apiService from '../services/apiService';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -52,11 +53,46 @@ const PaperVerifier = () => {
     }
     setUploadedFile(file);
     try {
+      setExtracting(true);
+      // Try backend PDF processing first
+      try {
+        const response = await apiService.verifyPaperPDF(file);
+        if (response.success) {
+          // Set extracted text for preview
+          setPaperText(response.data.extracted_text_preview || 'Text extracted successfully');
+          // Automatically show verification results
+          setVerificationResult(response.data.verification_result);
+          setStep(3);
+
+          // Save to history
+          if (user) {
+            try {
+              await saveVerificationToHistory({
+                text: response.data.extracted_text_preview?.substring(0, 500) || 'PDF content',
+                fakeProbability: response.data.verification_result.fake_probability,
+                isLikelyFake: response.data.verification_result.is_likely_fake,
+                confidence: response.data.verification_result.confidence,
+                detectedPatterns: response.data.verification_result.detected_issues,
+                fileName: file.name
+              });
+            } catch (error) {
+              console.error('Error saving verification to history:', error);
+            }
+          }
+          return;
+        }
+      } catch (backendError) {
+        console.warn('Backend PDF processing failed, falling back to client-side:', backendError.message);
+      }
+
+      // Fallback to client-side extraction
       const extractedText = await extractTextFromPDF(file);
       setPaperText(extractedText);
     } catch (error) {
       alert(error.message);
       setUploadedFile(null);
+    } finally {
+      setExtracting(false);
     }
   };
 
@@ -136,53 +172,44 @@ const PaperVerifier = () => {
       alert('Please provide content to analyze');
       return;
     }
+
     setLoading(true);
-    // ✅ FIX 1: Corrected typo from "mulate cmise" to "new Promise"
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    const fakePatterns = detectFakeContentPatterns(paperText);
-    const structureAnalysis = analyzeResearchStructure(paperText);
-    const authenticityCheck = checkContentAuthenticity(paperText);
-    let fakeProbability = 0;
-    fakePatterns.detectedIssues.forEach(issue => {
-      switch (issue.severity) {
-        case 'high': fakeProbability += issue.count * 20; break;
-        case 'medium': fakeProbability += issue.count * 10; break;
-        default: fakeProbability += issue.count * 5; break;
-      }
-    });
-    if (!structureAnalysis.hasProperStructure) fakeProbability += 15;
-    if (authenticityCheck.totalAuthenticityPoints < 3) fakeProbability += 20;
-    if (structureAnalysis.wordCount < 1000) fakeProbability += 10;
-    if (authenticityCheck.totalAuthenticityPoints > 10) fakeProbability -= 15;
-    if (structureAnalysis.totalSections >= 6) fakeProbability -= 10;
-    fakeProbability = Math.min(95, Math.max(5, fakeProbability));
-    const result = {
-      fakeProbability: Math.round(fakeProbability),
-      isLikelyFake: fakeProbability > 60,
-      confidence: fakeProbability > 80 ? 'High' : fakeProbability > 40 ? 'Medium' : 'Low',
-      detectedIssues: fakePatterns.detectedIssues,
-      suspiciousContent: fakePatterns.suspiciousContent,
-      structureAnalysis,
-      authenticityCheck,
-      recommendations: generateRecommendations(fakeProbability, fakePatterns.detectedIssues)
-    };
-    setVerificationResult(result);
-    setStep(3);
+
     try {
-      if (user) {
-        await saveVerificationToHistory({
-          text: paperText.substring(0, 500),
-          fakeProbability: result.fakeProbability,
-          isLikelyFake: result.isLikelyFake,
-          confidence: result.confidence,
-          detectedPatterns: result.detectedIssues,
-          fileName: uploadedFile?.name || 'Manual Input'
-        });
+      // Use backend API for verification
+      const response = await apiService.verifyPaper(
+        paperText,
+        uploadedFile?.name || 'Manual Input'
+      );
+
+      if (response.success) {
+        setVerificationResult(response.data.verification_result);
+        setStep(3);
+
+        // Save verification to history
+        try {
+          if (user) {
+            await saveVerificationToHistory({
+              text: paperText.substring(0, 500),
+              fakeProbability: response.data.verification_result.fake_probability,
+              isLikelyFake: response.data.verification_result.is_likely_fake,
+              confidence: response.data.verification_result.confidence,
+              detectedPatterns: response.data.verification_result.detected_issues,
+              fileName: uploadedFile?.name || 'Manual Input'
+            });
+          }
+        } catch (error) {
+          console.error('Error saving verification to history:', error);
+        }
+      } else {
+        throw new Error(response.message || 'Verification failed');
       }
     } catch (error) {
-      console.error('Error saving verification to history:', error);
+      console.error('Error verifying paper:', error);
+      alert(error.message || 'Failed to verify the paper. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const generateRecommendations = (probability, issues) => {
@@ -283,21 +310,156 @@ const PaperVerifier = () => {
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <div className="flex items-center justify-between mb-6"><h2 className="text-2xl font-bold text-gray-800">Fake Content Analysis Results</h2><button onClick={resetVerification} className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium">New Analysis</button></div>
             <div className="space-y-6">
-              <div className={`p-6 rounded-xl border-2 ${verificationResult.isLikelyFake ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}><div className="flex items-center justify-between mb-4"><h3 className="text-xl font-semibold">{verificationResult.isLikelyFake ? '🚨 Likely Contains Fake Content' : '✅ Appears Authentic'}</h3><span className={`px-3 py-1 rounded-full text-sm font-medium ${verificationResult.confidence === 'High' ? 'bg-red-100 text-red-800' : verificationResult.confidence === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>{verificationResult.confidence} Confidence</span></div><div className="mb-4"><div className="flex justify-between text-sm mb-2"><span>Fake Content Probability</span><span className="font-medium">{verificationResult.fakeProbability}%</span></div><div className="w-full bg-gray-200 rounded-full h-4"><div className={`h-4 rounded-full transition-all duration-1000 ${verificationResult.fakeProbability > 70 ? 'bg-red-500' : verificationResult.fakeProbability > 40 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${verificationResult.fakeProbability}%` }}></div></div></div></div>
-              {verificationResult.detectedIssues.length > 0 && (
+              <div className={`p-6 rounded-xl border-2 ${verificationResult.is_likely_fake ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">
+                    {verificationResult.is_likely_fake ? '🚨 Likely Contains Fake Content' : '✅ Appears Authentic'}
+                  </h3>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${verificationResult.confidence === 'High' ? 'bg-red-100 text-red-800' :
+                    verificationResult.confidence === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                    {verificationResult.confidence} Confidence
+                  </span>
+                </div>
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Fake Content Probability</span>
+                    <span className="font-medium">{verificationResult.fake_probability}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-4">
+                    <div
+                      className={`h-4 rounded-full transition-all duration-1000 ${verificationResult.fake_probability > 70 ? 'bg-red-500' :
+                        verificationResult.fake_probability > 40 ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`}
+                      style={{ width: `${verificationResult.fake_probability}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Enhanced Quality Assessment */}
+                {verificationResult.quality_assessment && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-semibold text-gray-800 mb-2">📊 Quality Assessment</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">Authenticity Score:</span>
+                        <span className="font-medium ml-2">{verificationResult.quality_assessment.authenticity_score}%</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Overall Quality:</span>
+                        <span className="font-medium ml-2">{verificationResult.quality_assessment.overall_quality}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Processing Summary */}
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div>
+                      <span className="text-gray-600">Processing Time:</span>
+                      <div className="font-medium">{verificationResult.processing_time_seconds}s</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Analysis Method:</span>
+                      <div className="font-medium">{verificationResult.analysis_method?.replace(/_/g, ' ') || 'Standard'}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Issues Found:</span>
+                      <div className="font-medium">{(verificationResult.detected_issues || []).length}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Word Count:</span>
+                      <div className="font-medium">{verificationResult.structure_analysis?.word_count || 'N/A'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Analysis Display */}
+              {verificationResult.ai_analysis && verificationResult.ai_analysis !== "AI analysis unavailable" && (
+                <div className="p-6 bg-purple-50 border border-purple-200 rounded-xl">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span className="mr-2">🤖</span>
+                    AI Analysis
+                  </h3>
+                  <div className="text-sm text-gray-700 whitespace-pre-wrap max-h-64 overflow-y-auto">
+                    {verificationResult.ai_analysis.length > 800 ?
+                      `${verificationResult.ai_analysis.substring(0, 800)}...` :
+                      verificationResult.ai_analysis
+                    }
+                  </div>
+                </div>
+              )}
+
+              {/* Structural Issues */}
+              {verificationResult.structural_issues && verificationResult.structural_issues.length > 0 && (
+                <div className="p-6 bg-orange-50 border border-orange-200 rounded-xl">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span className="mr-2">🏗️</span>
+                    Structural Issues
+                  </h3>
+                  <ul className="space-y-2">
+                    {verificationResult.structural_issues.map((issue, index) => (
+                      <li key={index} className="text-sm text-orange-800 flex items-start">
+                        <span className="mr-2">⚠️</span>
+                        <span>{issue}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {(verificationResult.detected_issues || verificationResult.detectedIssues || []).length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">🚨 Suspicious Content Detected ({verificationResult.detectedIssues.length} issues)</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">🚨 Suspicious Content Detected ({(verificationResult.detected_issues || verificationResult.detectedIssues || []).length} issues)</h3>
                   <div className="space-y-3">
-                    {verificationResult.detectedIssues.map((issue, index) => (
-                      <div key={index} className={`p-4 rounded-lg border ${getSeverityColor(issue.severity)}`}><div className="flex justify-between items-start mb-2"><div className="flex items-center"><span className="mr-2 text-lg">{getCategoryIcon(issue.category)}</span><h4 className="font-medium">{issue.category}</h4></div><span className="text-xs px-2 py-1 rounded-full bg-white font-medium">{issue.count} found</span></div><p className="text-sm mb-2">{issue.description}</p>
-                        {issue.examples.length > 0 && (<div className="text-xs"><strong>Examples:</strong><ul className="list-disc list-inside mt-1 space-y-1">{issue.examples.map((example, i) => (<li key={i} className="text-gray-700">{example}...</li>))}</ul></div>)}
+                    {(verificationResult.detected_issues || verificationResult.detectedIssues || []).map((issue, index) => (
+                      <div key={index} className={`p-4 rounded-lg border-l-4 ${issue.severity === 'high' ? 'border-red-500 bg-red-50' :
+                        issue.severity === 'medium' ? 'border-yellow-500 bg-yellow-50' :
+                          'border-blue-500 bg-blue-50'
+                        }`}>
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center mb-2">
+                              <span className="mr-2 text-lg">{getCategoryIcon(issue.category || issue.type)}</span>
+                              <h4 className="font-medium text-gray-800">{issue.type || issue.category}</h4>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{issue.description}</p>
+                            {issue.examples && issue.examples.length > 0 && (
+                              <div className="text-xs">
+                                <span className="text-gray-500">Examples: </span>
+                                <span className="text-gray-700 italic">
+                                  {issue.examples.slice(0, 3).map(example =>
+                                    Array.isArray(example) ? example.join(' ') : example
+                                  ).join(', ')}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end ml-3">
+                            <span className={`px-2 py-1 rounded text-xs font-medium mb-1 ${issue.severity === 'high' ? 'bg-red-100 text-red-800' :
+                              issue.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-blue-100 text-blue-800'
+                              }`}>
+                              {issue.severity}
+                            </span>
+                            {issue.count && (
+                              <span className="text-xs text-gray-500">
+                                {issue.count} instances
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-              {verificationResult.suspiciousContent.length > 0 && (
-                <div><h3 className="text-lg font-semibold text-gray-800 mb-4">📍 Suspicious Content Sections</h3><div className="space-y-3">{verificationResult.suspiciousContent.map((content, index) => (<div key={index} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg"><div className="flex items-center justify-between mb-2"><span className="text-sm font-medium text-yellow-800">Sentence {content.sentenceIndex} - {content.issue}</span><span className={`text-xs px-2 py-1 rounded-full ${getSeverityColor(content.severity)}`}>{content.severity}</span></div><p className="text-sm text-gray-700 italic">"{content.content}"</p></div>))}</div></div>
+              {(verificationResult.suspicious_content || verificationResult.suspiciousContent || []).length > 0 && (
+                <div><h3 className="text-lg font-semibold text-gray-800 mb-4">📍 Suspicious Content Sections</h3><div className="space-y-3">{(verificationResult.suspicious_content || verificationResult.suspiciousContent || []).map((content, index) => (<div key={index} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg"><div className="flex items-center justify-between mb-2"><span className="text-sm font-medium text-yellow-800">Sentence {content.sentence_index || content.sentenceIndex} - {content.issue}</span><span className={`text-xs px-2 py-1 rounded-full ${getSeverityColor(content.severity)}`}>{content.severity}</span></div><p className="text-sm text-gray-700 italic">"{content.content}"</p></div>))}</div></div>
               )}
               <div><h3 className="text-lg font-semibold text-gray-800 mb-4">💡 Recommendations</h3><div className="space-y-2">{verificationResult.recommendations.map((rec, index) => (<div key={index} className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg"><span className="text-blue-600 mt-0.5">💡</span><span className="text-sm text-blue-800">{rec}</span></div>))}</div></div>
             </div>
