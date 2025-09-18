@@ -51,7 +51,7 @@ git push origin main
 ### 3. Verify Deployment
 - Check build logs for "✅ App test passed!"
 - Verify service starts without errors
-- Test health endpoint: `https://your-app.onrender.com/health`
+- Test health endpoint: `https://your-app.onrender.com/api/papers/health`
 
 ## Alternative Solutions
 
@@ -126,7 +126,7 @@ After deployment:
 - [ ] Build completes without Python errors
 - [ ] App test passes during build
 - [ ] Service starts successfully
-- [ ] Health endpoint responds: `/health`
+- [ ] Health endpoint responds: `/api/papers/health`
 - [ ] API docs accessible: `/docs`
 - [ ] Paper generation endpoint works: `/api/papers/generate`
 
