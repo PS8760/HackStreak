@@ -1,0 +1,8 @@
+requirements.txt
+requirements-render.txt
+backend_python/
+node_modules/
+.git/
+.vscode/
+*.log
+.DS_Store

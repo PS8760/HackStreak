@@ -1,4 +1,4 @@
-# Ultra-minimal requirements for Render
+# Ultra-minimal requirements for Render (no Rust compilation needed)
 fastapi==0.95.2
 uvicorn==0.22.0
 httpx==0.24.1
@@ -7,3 +7,4 @@ pydantic==1.10.7
 python-multipart==0.0.6
 PyPDF2==3.0.1
 reportlab==4.0.4
+typing-extensions==4.5.0
