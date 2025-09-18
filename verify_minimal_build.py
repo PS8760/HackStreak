@@ -35,6 +35,12 @@ def test_imports():
         app = fastapi.FastAPI(title="Test App")
         print("✅ FastAPI app creation successful")
         
+        # Test basic endpoint creation
+        @app.get("/test")
+        def test_endpoint():
+            return {"status": "ok"}
+        print("✅ FastAPI endpoint creation successful")
+        
         print("\n🎉 All minimal requirements imported successfully!")
         return True
         

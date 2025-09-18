@@ -18,7 +18,10 @@
     "docker:up": "docker-compose up --build",
     "docker:down": "docker-compose down",
     "fix": "python emergency_fix.py",
-    "dev-fast": "vite --host 0.0.0.0 --port 5173 --no-hmr"
+    "dev-fast": "vite --host 0.0.0.0 --port 5173 --no-hmr",
+    "deploy:vercel": "python deploy_vercel.py",
+    "build:prod": "NODE_ENV=production vite build",
+    "test:build": "npm run build && npm run preview"
   },
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",
