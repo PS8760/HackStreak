@@ -1,7 +1,7 @@
-# Render-optimized requirements (no Rust dependencies)
+# Render-optimized requirements (Python 3.13 compatible)
 # Core FastAPI and ASGI server
-fastapi==0.100.1
-uvicorn==0.23.2
+fastapi==0.95.2
+uvicorn==0.22.0
 
 # Environment and configuration
 python-dotenv==1.0.0
@@ -10,8 +10,8 @@ python-dotenv==1.0.0
 httpx==0.24.1
 requests==2.31.0
 
-# Data validation (Pydantic v1 - no Rust)
-pydantic==1.10.12
+# Data validation (older stable version)
+pydantic==1.10.7
 
 # File handling and uploads
 python-multipart==0.0.6
@@ -20,9 +20,5 @@ python-multipart==0.0.6
 PyPDF2==3.0.1
 reportlab==4.0.4
 
-# Authentication and security
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-
 # Basic utilities
-typing-extensions==4.7.1
+typing-extensions==4.5.0
