@@ -19,11 +19,18 @@ pip install --no-cache-dir python-dotenv==1.0.0
 pip install --no-cache-dir pydantic==1.10.2
 pip install --no-cache-dir typing-extensions==4.4.0
 
+echo "📦 Installing PDF and file handling..."
+pip install --no-cache-dir reportlab==3.6.13
+pip install --no-cache-dir PyPDF2==3.0.1
+pip install --no-cache-dir python-multipart==0.0.6
+
 # Verify installation
 echo "🧪 Verifying installation..."
 python -c "import fastapi; print(f'FastAPI: {fastapi.__version__}')"
 python -c "import uvicorn; print(f'Uvicorn: {uvicorn.__version__}')"
 python -c "import pydantic; print(f'Pydantic: {pydantic.VERSION}')"
+python -c "import reportlab; print('ReportLab: OK')"
+python -c "import PyPDF2; print('PyPDF2: OK')"
 
 # Run verification script
 echo "✅ Running verification..."

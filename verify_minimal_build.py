@@ -31,6 +31,19 @@ def test_imports():
         import dotenv
         print("✅ Python-dotenv imported")
         
+        # Test PDF libraries
+        try:
+            import reportlab
+            print("✅ ReportLab imported")
+        except ImportError:
+            print("⚠️  ReportLab not available (optional)")
+        
+        try:
+            import PyPDF2
+            print("✅ PyPDF2 imported")
+        except ImportError:
+            print("⚠️  PyPDF2 not available (optional)")
+        
         # Test FastAPI app creation
         app = fastapi.FastAPI(title="Test App")
         print("✅ FastAPI app creation successful")
