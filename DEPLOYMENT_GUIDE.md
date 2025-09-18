@@ -114,7 +114,32 @@ docker-compose -f docker-compose.prod.yml up -d
    - Output Directory: `dist`
    - Install Command: `npm install`
 
-### Backend on Railway
+### Backend on Render (Recommended)
+
+1. **Deploy to Render**
+   ```bash
+   # Push to GitHub
+   git add .
+   git commit -m "Deploy to Render"
+   git push origin main
+   
+   # Go to render.com and connect repository
+   # Render will auto-detect render.yaml configuration
+   ```
+
+2. **Set Environment Variables in Render Dashboard**
+   ```
+   GROQ_API_KEY=your_groq_key
+   GEMINI_API_KEY=your_gemini_key
+   FRONTEND_URL=https://your-vercel-app.vercel.app
+   ```
+
+3. **Render Configuration (Automatic)**
+   - Uses `requirements-render.txt` (no Rust dependencies)
+   - Optimized for Render's build environment
+   - Automatic HTTPS and custom domains
+
+### Backend on Railway (Alternative)
 
 1. **Deploy to Railway**
    ```bash
@@ -132,24 +157,6 @@ docker-compose -f docker-compose.prod.yml up -d
    railway variables set GROQ_API_KEY=your_groq_key
    railway variables set GEMINI_API_KEY=your_gemini_key
    railway variables set FRONTEND_URL=https://your-vercel-app.vercel.app
-   ```
-
-3. **Update Dockerfile.backend for Railway**
-   ```dockerfile
-   FROM python:3.9-slim
-
-   WORKDIR /app
-
-   RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
-
-   COPY backend_python/requirements.txt .
-   RUN pip install --no-cache-dir -r requirements.txt
-
-   COPY backend_python/ .
-
-   EXPOSE $PORT
-
-   CMD python -m uvicorn groq_httpx_ultra:app --host 0.0.0.0 --port $PORT
    ```
 
 ---

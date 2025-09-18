@@ -1,6 +1,16 @@
 # 🚀 Quick Deploy Guide
 
-## 1. Setup Environment Variables
+## 1. First-Time Setup
+
+```bash
+# Install all dependencies
+python install.py
+
+# Edit with your API keys
+nano .env
+```
+
+## 2. Environment Variables (Manual Setup)
 
 ```bash
 # Copy template
@@ -14,7 +24,7 @@ nano .env
 - **Groq API**: Get from [console.groq.com](https://console.groq.com/)
 - **Gemini API**: Get from [makersuite.google.com](https://makersuite.google.com/app/apikey)
 
-## 2. Choose Deployment Method
+## 3. Choose Deployment Method
 
 ### 🐳 Docker (Recommended)
 ```bash
@@ -34,7 +44,7 @@ python deploy.py build
 ```
 **Result**: Production files ready for any hosting
 
-## 3. Access Your App
+## 4. Access Your App
 
 - **Frontend**: http://localhost:5173 (or your deployed URL)
 - **Backend API**: http://localhost:8000/api
